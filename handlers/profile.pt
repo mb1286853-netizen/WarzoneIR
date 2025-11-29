@@ -1,0 +1,46 @@
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram.filters import Command
+from keyboards.profile_menu import profile_main_keyboard
+from database import Database
+from utils.functions import calculate_power
+
+db = Database()
+profile_router = Router()
+
+@profile_router.message(F.text == "👤 پروفایل")
+async def profile_main(message: Message):
+    user_id = message.from_user.id
+    user = db.get_user(user_id)
+    
+    if not user:
+        return
+    
+    # گرفتن داده‌های کاربر
+    username = user[1] or "بدون نام"
+    level = user[3]
+    xp = user[4]
+    power = user[5]
+    zone_coin = user[6]
+    zone_gem = user[7]
+    defense_level = user[8]
+    cyber_level = user[9]
+    miner_level = user[10]
+    
+    # محاسبه XP مورد نیاز برای سطح بعدی
+    xp_needed = level * 100
+    
+    await message.answer(
+        f"👤 **پروفایل کاربر**\n\n"
+        f"🆔 نام: {username}\n"
+        f"⭐ سطح: {level}\n"
+        f"📊 XP: {xp}/{xp_needed}\n"
+        f"💪 قدرت: {power}\n"
+        f"💰 ZP: {zone_coin:,}\n"
+        f"💎 جم: {zone_gem}\n"
+        f"🛡️ پدافند: سطح {defense_level}\n"
+        f"🔒 امنیت: سطح {cyber_level}\n"
+        f"⛏ ماینر: سطح {miner_level}\n\n"
+        f"🎯 برای بهبود پروفایل از منوها استفاده کنید",
+        reply_markup=profile_main_keyboard()
+    )
