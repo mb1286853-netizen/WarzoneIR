@@ -1,45 +1,78 @@
-import requests
-import time
+import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
 import os
 
+# تنظیمات
 TOKEN = os.getenv("TOKEN")
 
-print(f"🔑 توکن: {TOKEN}")
-
-def get_updates():
-    """دریافت پیام‌ها"""
-    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
-    response = requests.get(url)
-    return response.json()
-
-def send_message(chat_id, text):
-    """ارسال پیام"""
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    data = {"chat_id": chat_id, "text": text}
-    response = requests.post(url, json=data)
-    return response.json()
-
-# تست اولیه
-print("🧪 تست توکن...")
-test = requests.get(f"https://api.telegram.org/bot{TOKEN}/getMe").json()
-print(f"نتیجه تست: {test}")
-
-if test.get("ok"):
-    print("✅ بات فعال است! در حال گوش دادن...")
-    last_update_id = 0
+async def main():
+    print("🔧 شروع راه‌اندازی بات...")
     
-    while True:
-        updates = get_updates()
-        if updates.get("ok"):
-            for update in updates["result"]:
-                if update["update_id"] > last_update_id:
-                    last_update_id = update["update_id"]
-                    chat_id = update["message"]["chat"]["id"]
-                    text = update["message"]["text"]
-                    
-                    print(f"📩 پیام: {text}")
-                    send_message(chat_id, "🤖 بات فعال است!")
+    # ساخت بات
+    bot = Bot(token=TOKEN)
+    dp = Dispatcher()
+    
+    # منوی ساده
+    async def send_menu(chat_id):
+        from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
         
-        time.sleep(1)
-else:
-    print("❌ توکن نامعتبر است!")
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="👤 پروفایل"), KeyboardButton(text="⚔️ حمله")],
+                [KeyboardButton(text="🛒 فروشگاه"), KeyboardButton(text="⛏ ماینر")]
+            ],
+            resize_keyboard=True
+        )
+        
+        await bot.send_message(
+            chat_id,
+            "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
+            "✅ بات فعال و آماده!\n"
+            "👇 از منو استفاده کنید:",
+            reply_markup=keyboard
+        )
+    
+    # هندلر استارت
+    @dp.message(Command("start"))
+    async def start_cmd(message: types.Message):
+        print(f"🎯 کاربر {message.from_user.id} بات رو استارت کرد")
+        await send_menu(message.chat.id)
+    
+    # هندلر منو
+    @dp.message()
+    async def menu_handler(message: types.Message):
+        text = message.text
+        user_id = message.from_user.id
+        
+        print(f"📱 کاربر {user_id}: {text}")
+        
+        if text == "👤 پروفایل":
+            await message.answer(
+                "👤 **پروفایل شما**\n\n"
+                "⭐ سطح: ۱\n💰 ZP: ۱,۰۰۰\n💎 جم: ۰\n"
+                "💪 قدرت: ۱۰۰\n🛡️ پدافند: سطح ۱"
+            )
+        
+        elif text == "⚔️ حمله":
+            await message.answer("⚔️ **سیستم حمله**\n\n🔜 به زودی فعال می‌شود")
+        
+        elif text == "🛒 فروشگاه":
+            await message.answer("🛒 **فروشگاه**\n\n🔜 به زودی فعال می‌شود")
+        
+        elif text == "⛏ ماینر":
+            await message.answer("⛏ **ماینر**\n\n🔜 به زودی فعال می‌شود")
+        
+        else:
+            await send_menu(message.chat.id)
+    
+    # اطلاعات بات
+    bot_info = await bot.get_me()
+    print(f"✅ بات: @{bot_info.username}")
+    print("🚀 بات فعال شد! منتظر پیام...")
+    
+    # شروع
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())
