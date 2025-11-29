@@ -3,21 +3,9 @@ services:
     name: warzone-bot
     env: python
     plan: free
-    branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
       - key: TOKEN
         sync: false
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromGroup: warzone-bot
     healthCheckPath: /
-    autoDeploy: true
-
-envVarGroups:
-  - name: warzone-bot
-    envVars:
-      - key: RENDER_EXTERNAL_HOSTNAME
-        generateValue: true
-      - key: PORT
-        value: 8000
