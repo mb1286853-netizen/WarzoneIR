@@ -4,8 +4,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import Message
-from aiogram.filters import Command
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.filters import Command, Text
 from aiohttp import web
 import os
 from dotenv import load_dotenv
@@ -14,185 +14,186 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
-# تنظیم لاگ‌گیری - فقط خطاهای مهم رو نشون بده
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-# کاهش لاگ‌های aiogram
-logging.getLogger('aiogram').setLevel(logging.WARNING)
-logging.getLogger('aiohttp').setLevel(logging.WARNING)
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 logger.info(f"🔑 توکن: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
 
 if not TOKEN:
     logger.error("❌ توکن پیدا نشد!")
-    async def health_check(request):
-        return web.Response(text="❌ TOKEN not found")
-    
-    app = web.Application()
-    app.router.add_get('/', health_check)
-    web.run_app(app, host='0.0.0.0', port=8000)
     exit()
 
-# ساخت Bot و Dispatcher
 try:
-    logger.info("🔄 در حال ساخت Bot object...")
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
-    
-    # غیرفعال کردن بعضی middleware ها برای کاهش ارور
-    dp["_aiogram_skip_updates"] = True
-    
     logger.info("✅ Bot و Dispatcher ساخته شدند")
 except Exception as e:
-    logger.error(f"❌ خطا در ساخت Bot: {str(e)}")
-    async def health_check(request):
-        return web.Response(text=f"❌ Bot Error: {type(e).__name__}")
-    app = web.Application()
-    app.router.add_get('/', health_check)
-    web.run_app(app, host='0.0.0.0', port=8000)
+    logger.error(f"❌ خطا در ساخت Bot: {e}")
     exit()
 
-# هندلر اصلی با مدیریت ارور
+# ساخت منوی دکمه‌ای
+def main_menu():
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⚔️ حمله"), KeyboardButton(text="👤 پروفایل")],
+            [KeyboardButton(text="🛒 فروشگاه"), KeyboardButton(text="⛏ ماینر")],
+            [KeyboardButton(text="📦 جعبه"), KeyboardButton(text="🛡 دفاع")],
+            [KeyboardButton(text="🕵️ خرابکاری"), KeyboardButton(text="🎯 ترکیب‌ها")]
+        ],
+        resize_keyboard=True,
+        input_field_placeholder="👇 از منو انتخاب کنید"
+    )
+    return keyboard
+
 @dp.message(Command("start"))
 async def start_command(message: Message):
-    try:
-        user = message.from_user
-        logger.info(f"🎯 START از: {user.id} (@{user.username})")
-        
-        await message.answer(
-            "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
-            "🛠 *سیستم در حال توسعه است*\n\n"
-            "🔹 /start - اطلاعات بات\n"
-            "🔹 /profile - پروفایل\n"
-            "🔹 /attack - حمله\n"
-            "🔹 /shop - فروشگاه\n"
-            "🔹 /miner - ماینر\n\n"
-            "✅ بات آنلاین و فعال است!"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در start: {e}")
+    logger.info(f"🎯 شروع از کاربر: {message.from_user.id}")
+    await message.answer(
+        "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
+        "👇 از منوی زیر انتخاب کنید:",
+        reply_markup=main_menu()
+    )
 
-@dp.message(Command("profile"))
-async def profile_command(message: Message):
-    try:
-        logger.info(f"📊 PROFILE از: {message.from_user.id}")
-        await message.answer(
-            "👤 **پروفایل شما**\n\n"
-            "⭐ سطح: ۱\n"
-            "💰 ZP: ۱,۰۰۰\n" 
-            "💎 جم: ۰\n"
-            "💪 قدرت: ۱۰۰\n"
-            "🛡️ پدافند: سطح ۱\n\n"
-            "🔜 به زودی کامل می‌شود"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در profile: {e}")
+@dp.message(Text("👤 پروفایل"))
+async def profile_menu(message: Message):
+    logger.info(f"📊 پروفایل از: {message.from_user.id}")
+    await message.answer(
+        "👤 **پروفایل شما**\n\n"
+        "⭐ سطح: ۱\n"
+        "💰 ZP: ۱,۰۰۰\n" 
+        "💎 جم: ۰\n"
+        "💪 قدرت: ۱۰۰\n"
+        "🛡️ پدافند: سطح ۱\n\n"
+        "📈 برای پیشرفت از حمله استفاده کنید!",
+        reply_markup=main_menu()
+    )
 
-@dp.message(Command("attack"))
-async def attack_command(message: Message):
-    try:
-        logger.info(f"⚔️ ATTACK از: {message.from_user.id}")
-        await message.answer(
-            "⚔️ **سیستم حمله**\n\n"
-            "🎯 **حمله تکی**\n"
-            "💥 **حمله ترکیبی**\n"
-            "💰 **سیستم غارت**\n\n"
-            "🔜 به زودی فعال می‌شود"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در attack: {e}")
+@dp.message(Text("⚔️ حمله"))
+async def attack_menu(message: Message):
+    logger.info(f"⚔️ حمله از: {message.from_user.id}")
+    await message.answer(
+        "⚔️ **سیستم حمله**\n\n"
+        "🎯 **حمله تکی** - استفاده از یک موشک\n"
+        "💥 **حمله ترکیبی** - ترکیب جنگنده و موشک\n"
+        "💰 **سیستم غارت** - کسب ZP از حمله\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
 
-@dp.message(Command("shop"))
-async def shop_command(message: Message):
-    try:
-        logger.info(f"🛒 SHOP از: {message.from_user.id}")
-        await message.answer(
-            "🛒 **فروشگاه WarZone**\n\n"
-            "🚀 موشک‌ها\n"
-            "🛩 جنگنده‌ها\n" 
-            "🛸 پهپادها\n"
-            "🔧 پدافند\n"
-            "💎 آیتم‌های ویژه\n\n"
-            "🔜 به زودی فعال می‌شود"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در shop: {e}")
+@dp.message(Text("🛒 فروشگاه"))
+async def shop_menu(message: Message):
+    logger.info(f"🛒 فروشگاه از: {message.from_user.id}")
+    await message.answer(
+        "🛒 **فروشگاه WarZone**\n\n"
+        "🚀 **موشک‌ها** - از عادی تا آخرالزمانی\n"
+        "🛩 **جنگنده‌ها** - افزایش قدرت حمله\n" 
+        "🛸 **پهپادها** - حمله هوایی\n"
+        "🔧 **پدافند** - حفاظت از پایگاه\n"
+        "💎 **آیتم‌ها** - موارد ویژه\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
 
-@dp.message(Command("miner"))
-async def miner_command(message: Message):
-    try:
-        logger.info(f"⛏️ MINER از: {message.from_user.id}")
-        await message.answer(
-            "⛏️ **سیستم ماینر**\n\n"
-            "💰 تولید: ۱۰۰ ZP/۳ساعت\n"
-            "📊 سطح: ۱\n"
-            "💎 موجودی: ۰ ZP\n\n"
-            "🔜 به زودی فعال می‌شود"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در miner: {e}")
+@dp.message(Text("⛏ ماینر"))
+async def miner_menu(message: Message):
+    logger.info(f"⛏️ ماینر از: {message.from_user.id}")
+    await message.answer(
+        "⛏️ **سیستم ماینر**\n\n"
+        "💰 تولید: ۱۰۰ ZP/۳ساعت\n"
+        "📊 سطح: ۱\n"
+        "💎 موجودی: ۰ ZP\n"
+        "🔼 ارتقا: ۱۰۰ ZP\n\n"
+        "⏰ هر ۳ ساعت یکبار برداشت کنید",
+        reply_markup=main_menu()
+    )
+
+@dp.message(Text("📦 جعبه"))
+async def boxes_menu(message: Message):
+    logger.info(f"📦 جعبه از: {message.from_user.id}")
+    await message.answer(
+        "📦 **جعبه‌های شانس**\n\n"
+        "📦 برنزی - رایگان (۲۴h)\n"
+        "🥈 نقره‌ای - ۵,۰۰۰ ZP\n"
+        "🥇 طلایی - ۲ جم\n"
+        "💎 الماس - ۵ جم\n"
+        "🌟 افسانه‌ای - ۱۵ جم\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
+
+@dp.message(Text("🛡 دفاع"))
+async def defense_menu(message: Message):
+    logger.info(f"🛡 دفاع از: {message.from_user.id}")
+    await message.answer(
+        "🛡 **سیستم دفاع**\n\n"
+        "🔒 **پدافند** - کاهش دمیج حملات\n"
+        "🛡 **امنیت سایبری** - جلوگیری از خرابکاری\n"
+        "📊 **وضعیت دفاع** - مشاهده آمادگی\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
+
+@dp.message(Text("🕵️ خرابکاری"))
+async def sabotage_menu(message: Message):
+    logger.info(f"🕵️ خرابکاری از: {message.from_user.id}")
+    await message.answer(
+        "🕵️ **سیستم خرابکاری**\n\n"
+        "🕵️ **نفوذی** - کاهش پدافند دشمن\n"
+        "💻 **الکترونیکی** - غیرفعال کردن سیستم\n"
+        "📡 **اطلاعاتی** - افزایش غارت\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
+
+@dp.message(Text("🎯 ترکیب‌ها"))
+async def combo_menu(message: Message):
+    logger.info(f"🎯 ترکیب‌ها از: {message.from_user.id}")
+    await message.answer(
+        "🎯 **ترکیب‌های حمله**\n\n"
+        "🛠 **ترکیب ۱** - حمله سریع\n"
+        "🛠 **ترکیب ۲** - حمله سنگین\n"
+        "🛠 **ترکیب ۳** - حمله ویژه\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
 
 @dp.message()
 async def all_messages(message: Message):
-    try:
-        logger.info(f"📩 پیام: '{message.text}' از: {message.from_user.id}")
-        await message.answer(
-            "🤖 **دستورات موجود:**\n\n"
-            "/start - اطلاعات بات\n"
-            "/profile - پروفایل\n" 
-            "/attack - حمله\n"
-            "/shop - فروشگاه\n"
-            "/miner - ماینر"
-        )
-    except Exception as e:
-        logger.error(f"❌ خطا در پردازش پیام: {e}")
+    logger.info(f"📩 پیام: '{message.text}'")
+    await message.answer(
+        "🤖 لطفاً از منوی زیر انتخاب کنید:",
+        reply_markup=main_menu()
+    )
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot - Active! ⚔️")
 
 async def on_startup():
-    """تابع startup"""
-    logger.info("🔄 شروع تنظیم وب‌هوک...")
     try:
         bot_info = await bot.get_me()
-        logger.info(f"✅ بات: @{bot_info.username} (ID: {bot_info.id})")
+        logger.info(f"✅ بات: @{bot_info.username}")
         
         webhook_url = f"https://warzoneir-1.onrender.com/webhook"
         await bot.set_webhook(webhook_url)
         logger.info(f"✅ وب‌هوک تنظیم شد")
         
     except Exception as e:
-        logger.error(f"❌ خطا در startup: {str(e)}")
+        logger.error(f"❌ خطا: {e}")
 
 async def create_app():
-    """ساخت اپلیکیشن aiohttp"""
     await on_startup()
-    
     app = web.Application()
     
-    webhook_requests_handler = SimpleRequestHandler(
-        dispatcher=dp,
-        bot=bot,
-    )
-    webhook_requests_handler.register(app, path="/webhook")
+    webhook_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+    webhook_handler.register(app, path="/webhook")
     
     app.router.add_get('/', health_check)
-    
-    logger.info("🚀 اپلیکیشن ساخته شد")
+    logger.info("🚀 اپلیکیشن با منوی دکمه‌ای آماده")
     return app
 
 def main():
-    logger.info("🎯 شروع راه‌اندازی WarZone Bot...")
-    
-    async def run_server():
-        app = await create_app()
-        return app
-    
-    app = asyncio.run(run_server())
+    logger.info("🎯 راه‌اندازی بات با منوی دکمه‌ای...")
+    app = asyncio.run(create_app())
     web.run_app(app, host='0.0.0.0', port=8000)
 
 if __name__ == '__main__':
