@@ -47,59 +47,45 @@ async def start_cmd(message: Message):
         "👇 از منوی زیر انتخاب کنید:",
         reply_markup=main_menu()
     )
-    logger.info("✅ پاسخ ارسال شد!")
 
 @dp.message(lambda message: message.text == "👤 پروفایل")
 async def profile_handler(message: Message):
     logger.info(f"📊 پروفایل از: {message.from_user.id}")
     await message.answer(
-        "👤 **پروفایل شما**\n\n"
-        "⭐ سطح: ۱\n💰 ZP: ۱,۰۰۰\n💎 جم: ۰\n"
-        "💪 قدرت: ۱۰۰\n🛡️ پدافند: سطح ۱\n\n"
-        "📈 با حمله کردن پیشرفت کنید!",
+        "👤 **پروفایل شما**\n\n⭐ سطح: ۱\n💰 ZP: ۱,۰۰۰\n💎 جم: ۰\n💪 قدرت: ۱۰۰",
         reply_markup=main_menu()
     )
 
 @dp.message(lambda message: message.text == "⚔️ حمله")
 async def attack_handler(message: Message):
     logger.info(f"⚔️ حمله از: {message.from_user.id}")
-    await message.answer(
-        "⚔️ **سیستم حمله**\n\n"
-        "🎯 حمله تکی\n💥 حمله ترکیبی\n💰 سیستم غارت\n\n"
-        "🔜 به زودی فعال می‌شود",
-        reply_markup=main_menu()
-    )
+    await message.answer("⚔️ **سیستم حمله**\n\n🔜 به زودی فعال می‌شود", reply_markup=main_menu())
 
 @dp.message(lambda message: message.text == "🛒 فروشگاه")
 async def shop_handler(message: Message):
     logger.info(f"🛒 فروشگاه از: {message.from_user.id}")
-    await message.answer(
-        "🛒 **فروشگاه WarZone**\n\n"
-        "🚀 موشک‌ها\n🛩 جنگنده‌ها\n🛸 پهپادها\n\n"
-        "🔜 به زودی فعال می‌شود",
-        reply_markup=main_menu()
-    )
+    await message.answer("🛒 **فروشگاه**\n\n🔜 به زودی فعال می‌شود", reply_markup=main_menu())
 
 @dp.message(lambda message: message.text == "⛏ ماینر")
 async def miner_handler(message: Message):
     logger.info(f"⛏ ماینر از: {message.from_user.id}")
-    await message.answer(
-        "⛏ **سیستم ماینر**\n\n"
-        "💰 تولید: ۱۰۰ ZP/۳ساعت\n📊 سطح: ۱\n\n"
-        "⏰ هر ۳ ساعت برداشت کنید",
-        reply_markup=main_menu()
-    )
+    await message.answer("⛏ **ماینر**\n\n🔜 به زودی فعال می‌شود", reply_markup=main_menu())
 
 @dp.message()
 async def all_messages(message: Message):
     logger.info(f"📩 پیام: '{message.text}'")
-    await message.answer(
-        "🤖 از منوی زیر انتخاب کنید:",
-        reply_markup=main_menu()
-    )
+    await message.answer("🤖 از منو استفاده کنید:", reply_markup=main_menu())
 
 async def main():
     logger.info("🚀 شروع بات WarZone...")
+    
+    # حذف وب‌هوک قبلی
+    try:
+        logger.info("🗑️ حذف وب‌هوک قبلی...")
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("✅ وب‌هوک قبلی حذف شد")
+    except Exception as e:
+        logger.error(f"❌ خطا در حذف وب‌هوک: {e}")
     
     # اطلاعات بات
     bot_info = await bot.get_me()
