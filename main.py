@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command, Text
 from aiohttp import web
 import os
@@ -54,7 +54,7 @@ async def start_command(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("👤 پروفایل"))
+@dp.message(Text(text="👤 پروفایل"))
 async def profile_menu(message: Message):
     logger.info(f"📊 پروفایل از: {message.from_user.id}")
     await message.answer(
@@ -68,7 +68,7 @@ async def profile_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("⚔️ حمله"))
+@dp.message(Text(text="⚔️ حمله"))
 async def attack_menu(message: Message):
     logger.info(f"⚔️ حمله از: {message.from_user.id}")
     await message.answer(
@@ -80,7 +80,7 @@ async def attack_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("🛒 فروشگاه"))
+@dp.message(Text(text="🛒 فروشگاه"))
 async def shop_menu(message: Message):
     logger.info(f"🛒 فروشگاه از: {message.from_user.id}")
     await message.answer(
@@ -94,7 +94,7 @@ async def shop_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("⛏ ماینر"))
+@dp.message(Text(text="⛏ ماینر"))
 async def miner_menu(message: Message):
     logger.info(f"⛏️ ماینر از: {message.from_user.id}")
     await message.answer(
@@ -107,7 +107,7 @@ async def miner_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("📦 جعبه"))
+@dp.message(Text(text="📦 جعبه"))
 async def boxes_menu(message: Message):
     logger.info(f"📦 جعبه از: {message.from_user.id}")
     await message.answer(
@@ -121,7 +121,7 @@ async def boxes_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("🛡 دفاع"))
+@dp.message(Text(text="🛡 دفاع"))
 async def defense_menu(message: Message):
     logger.info(f"🛡 دفاع از: {message.from_user.id}")
     await message.answer(
@@ -133,7 +133,7 @@ async def defense_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("🕵️ خرابکاری"))
+@dp.message(Text(text="🕵️ خرابکاری"))
 async def sabotage_menu(message: Message):
     logger.info(f"🕵️ خرابکاری از: {message.from_user.id}")
     await message.answer(
@@ -145,7 +145,7 @@ async def sabotage_menu(message: Message):
         reply_markup=main_menu()
     )
 
-@dp.message(Text("🎯 ترکیب‌ها"))
+@dp.message(Text(text="🎯 ترکیب‌ها"))
 async def combo_menu(message: Message):
     logger.info(f"🎯 ترکیب‌ها از: {message.from_user.id}")
     await message.answer(
