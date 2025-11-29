@@ -8,13 +8,3 @@ services:
     envVars:
       - key: TOKEN
         sync: false
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromGroup: warzone-bot
-
-envVarGroups:
-  - name: warzone-bot
-    envVars:
-      - key: RENDER_EXTERNAL_HOSTNAME
-        generateValue: true
-      - key: PORT
-        value: 8000
