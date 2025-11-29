@@ -22,35 +22,46 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-# هندلرهای اصلی مستقیماً در main.py
+# هندلرهای اصلی
 @dp.message(Command("start"))
 async def start_command(message: Message):
+    logger.info(f"📩 دریافت /start از کاربر: {message.from_user.id}")
     await message.answer(
         "🎯 **به WarZone خوش آمدید!**\n\n"
         "⚔️ یک بازی استراتژیک با سیستم حمله و دفاع پیشرفته\n\n"
         "✅ بات آنلاین و آماده است!\n"
-        "🔜 به زودی قابلیت‌ها اضافه می‌شوند\n\n"
-        "🛠 در حال توسعه..."
+        "🔜 به زودی قابلیت‌ها اضافه می‌شوند"
     )
 
 @dp.message(Command("profile"))
 async def profile_command(message: Message):
+    logger.info(f"📩 دریافت /profile از کاربر: {message.from_user.id}")
     await message.answer(
         "👤 **پروفایل شما**\n\n"
-        "⭐ سطح: ۱\n"
-        "💰 ZP: ۱,۰۰۰\n"
-        "💎 جم: ۰\n"
-        "💪 قدرت: ۱۰۰\n\n"
+        "⭐ سطح: ۱\n💰 ZP: ۱,۰۰۰\n💎 جم: ۰\n💪 قدرت: ۱۰۰\n\n"
         "🔜 سیستم پروفایل به زودی کامل می‌شود"
     )
+
+# هندلر برای همه پیام‌ها
+@dp.message()
+async def echo_message(message: Message):
+    logger.info(f"📩 دریافت پیام: {message.text} از {message.from_user.id}")
+    await message.answer("🤖 بات فعال است! از /start استفاده کنید")
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot - Active and Ready! ⚔️")
 
 async def on_startup(app):
     webhook_url = f"https://warzoneir-1.onrender.com/webhook"
-    await bot.set_webhook(webhook_url)
-    logger.info(f"✅ وب‌هوک تنظیم شد: {webhook_url}")
+    try:
+        await bot.set_webhook(webhook_url)
+        logger.info(f"✅ وب‌هوک تنظیم شد: {webhook_url}")
+        
+        # اطلاعات بات رو چک کنید
+        bot_info = await bot.get_me()
+        logger.info(f"🤖 بات: {bot_info.username} - {bot_info.first_name}")
+    except Exception as e:
+        logger.error(f"❌ خطا در تنظیم وب‌هوک: {e}")
 
 def main():
     dp.startup.register(on_startup)
