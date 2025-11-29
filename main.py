@@ -14,7 +14,11 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
-logging.basicConfig(level=logging.INFO)
+# تنظیم لاگ‌گیری
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 logger.info(f"🔑 توکن: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
@@ -44,25 +48,76 @@ except Exception as e:
     web.run_app(app, host='0.0.0.0', port=8000)
     exit()
 
+# هندلر اصلی
 @dp.message(Command("start"))
 async def start_command(message: Message):
-    logger.info(f"🎯 START از: {message.from_user.id}")
-    await message.answer("🎯 **به WarZone خوش آمدید!**\n\nبات آنلاین و فعال است! ⚔️")
+    user = message.from_user
+    logger.info(f"🎯 START از: {user.id} (@{user.username})")
+    
+    await message.answer(
+        "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
+        "🛠 *سیستم در حال توسعه است*\n\n"
+        "🔹 /start - اطلاعات بات\n"
+        "🔹 /profile - پروفایل\n"
+        "🔹 /attack - حمله\n"
+        "🔹 /shop - فروشگاه\n\n"
+        "✅ بات آنلاین و فعال است!"
+    )
+
+@dp.message(Command("profile"))
+async def profile_command(message: Message):
+    logger.info(f"📊 PROFILE از: {message.from_user.id}")
+    await message.answer(
+        "👤 **پروفایل شما**\n\n"
+        "⭐ سطح: ۱\n"
+        "💰 ZP: ۱,۰۰۰\n" 
+        "💎 جم: ۰\n"
+        "💪 قدرت: ۱۰۰\n\n"
+        "🔜 به زودی کامل می‌شود"
+    )
+
+@dp.message(Command("attack"))
+async def attack_command(message: Message):
+    logger.info(f"⚔️ ATTACK از: {message.from_user.id}")
+    await message.answer(
+        "⚔️ **سیستم حمله**\n\n"
+        "🔸 حمله تکی\n"
+        "🔸 حمله ترکیبی\n"
+        "🔸 سیستم غارت\n\n"
+        "🔜 به زودی فعال می‌شود"
+    )
+
+@dp.message(Command("shop"))
+async def shop_command(message: Message):
+    logger.info(f"🛒 SHOP از: {message.from_user.id}")
+    await message.answer(
+        "🛒 **فروشگاه WarZone**\n\n"
+        "🚀 موشک‌ها\n"
+        "🛩 جنگنده‌ها\n" 
+        "🛸 پهپادها\n"
+        "🔧 پدافند\n\n"
+        "🔜 به زودی فعال می‌شود"
+    )
 
 @dp.message()
-async def echo_handler(message: Message):
-    logger.info(f"📩 پیام: {message.text}")
-    await message.answer("🤖 از /start استفاده کنید")
+async def all_messages(message: Message):
+    logger.info(f"📩 پیام عادی: '{message.text}' از: {message.from_user.id}")
+    await message.answer(
+        "🤖 از دستورات استفاده کنید:\n\n"
+        "/start - اطلاعات بات\n"
+        "/profile - پروفایل\n" 
+        "/attack - حمله\n"
+        "/shop - فروشگاه"
+    )
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot - Active! ⚔️")
 
 async def on_startup():
-    """تابع startup که قبل از راه‌اندازی سرور اجرا می‌شه"""
+    """تابع startup"""
     logger.info("🔄 شروع تنظیم وب‌هوک...")
     try:
         # تست اتصال به تلگرام
-        logger.info("🔗 تست اتصال به تلگرام...")
         bot_info = await bot.get_me()
         logger.info(f"✅ بات: @{bot_info.username} (ID: {bot_info.id})")
         
@@ -76,7 +131,7 @@ async def on_startup():
 
 async def create_app():
     """ساخت اپلیکیشن aiohttp"""
-    await on_startup()  # اجرای دستی تابع startup
+    await on_startup()
     
     app = web.Application()
     
@@ -96,12 +151,10 @@ async def create_app():
 def main():
     logger.info("🎯 شروع راه‌اندازی WarZone Bot...")
     
-    # اجرای غیرهمزمان
     async def run_server():
         app = await create_app()
         return app
     
-    # راه‌اندازی سرور
     app = asyncio.run(run_server())
     web.run_app(app, host='0.0.0.0', port=8000)
 
