@@ -1,11 +1,1 @@
-services:
-  - type: web
-    name: warzone-bot
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    envVars:
-      - key: TOKEN
-        sync: false
-    healthCheckPath: /
+
