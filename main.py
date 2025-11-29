@@ -14,163 +14,78 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# تنظیمات asyncio برای رندر
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
-logger.info(f"🔑 توکن: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
+logging.basicConfig(level=logging.DEBUG)  # تغییر به DEBUG برای لاگ کامل
+logger = logging.getLogger(__name__)
 
 if not TOKEN:
     logger.error("❌ توکن پیدا نشد!")
     exit()
 
-try:
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
-    logger.info("✅ Bot و Dispatcher ساخته شدند")
-except Exception as e:
-    logger.error(f"❌ خطا در ساخت Bot: {e}")
-    exit()
+logger.info("🔄 ایجاد Bot instance...")
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+dp = Dispatcher()
 
-# ساخت منوی دکمه‌ای
 def main_menu():
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="⚔️ حمله"), KeyboardButton(text="👤 پروفایل")],
-            [KeyboardButton(text="🛒 فروشگاه"), KeyboardButton(text="⛏ ماینر")],
-            [KeyboardButton(text="📦 جعبه"), KeyboardButton(text="🛡 دفاع")],
-            [KeyboardButton(text="🕵️ خرابکاری"), KeyboardButton(text="🎯 ترکیب‌ها")]
+            [KeyboardButton(text="👤 پروفایل"), KeyboardButton(text="⚔️ حمله")],
         ],
-        resize_keyboard=True,
-        input_field_placeholder="👇 از منو انتخاب کنید"
+        resize_keyboard=True
     )
     return keyboard
 
 @dp.message(Command("start"))
-async def start_command(message: Message):
-    logger.info(f"🎯 شروع از کاربر: {message.from_user.id}")
-    await message.answer(
-        "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
-        "👇 از منوی زیر انتخاب کنید:",
-        reply_markup=main_menu()
-    )
-
-# هندلر برای تمام دکمه‌ها
-@dp.message(lambda message: message.text in [
-    "👤 پروفایل", "⚔️ حمله", "🛒 فروشگاه", "⛏ ماینر", 
-    "📦 جعبه", "🛡 دفاع", "🕵️ خرابکاری", "🎯 ترکیب‌ها"
-])
-async def handle_menu_buttons(message: Message):
-    user_id = message.from_user.id
-    text = message.text
+async def start_cmd(message: Message):
+    user = message.from_user
+    logger.info(f"🎯 دریافت /start از کاربر: {user.id} (@{user.username})")
     
-    logger.info(f"📱 دکمه {text} از: {user_id}")
-    
-    if text == "👤 پروفایل":
-        await message.answer(
-            "👤 **پروفایل شما**\n\n"
-            "⭐ سطح: ۱\n💰 ZP: ۱,۰۰۰\n💎 جم: ۰\n"
-            "💪 قدرت: ۱۰۰\n🛡️ پدافند: سطح ۱\n\n"
-            "📈 برای پیشرفت از حمله استفاده کنید!",
+    try:
+        logger.info("🔄 در حال ارسال پاسخ...")
+        response = await message.answer(
+            "🎯 **به WarZone خوش آمدید!** ⚔️\n\n"
+            "✅ بات فعال است!\n"
+            "👇 از منو استفاده کنید:",
             reply_markup=main_menu()
         )
-    
-    elif text == "⚔️ حمله":
-        await message.answer(
-            "⚔️ **سیستم حمله**\n\n"
-            "🎯 **حمله تکی** - استفاده از یک موشک\n"
-            "💥 **حمله ترکیبی** - ترکیب جنگنده و موشک\n"
-            "💰 **سیستم غارت** - کسب ZP از حمله\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "🛒 فروشگاه":
-        await message.answer(
-            "🛒 **فروشگاه WarZone**\n\n"
-            "🚀 **موشک‌ها** - از عادی تا آخرالزمانی\n"
-            "🛩 **جنگنده‌ها** - افزایش قدرت حمله\n" 
-            "🛸 **پهپادها** - حمله هوایی\n"
-            "🔧 **پدافند** - حفاظت از پایگاه\n"
-            "💎 **آیتم‌ها** - موارد ویژه\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "⛏ ماینر":
-        await message.answer(
-            "⛏️ **سیستم ماینر**\n\n"
-            "💰 تولید: ۱۰۰ ZP/۳ساعت\n"
-            "📊 سطح: ۱\n"
-            "💎 موجودی: ۰ ZP\n"
-            "🔼 ارتقا: ۱۰۰ ZP\n\n"
-            "⏰ هر ۳ ساعت یکبار برداشت کنید",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "📦 جعبه":
-        await message.answer(
-            "📦 **جعبه‌های شانس**\n\n"
-            "📦 برنزی - رایگان (۲۴h)\n"
-            "🥈 نقره‌ای - ۵,۰۰۰ ZP\n"
-            "🥇 طلایی - ۲ جم\n"
-            "💎 الماس - ۵ جم\n"
-            "🌟 افسانه‌ای - ۱۵ جم\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "🛡 دفاع":
-        await message.answer(
-            "🛡 **سیستم دفاع**\n\n"
-            "🔒 **پدافند** - کاهش دمیج حملات\n"
-            "🛡 **امنیت سایبری** - جلوگیری از خرابکاری\n"
-            "📊 **وضعیت دفاع** - مشاهده آمادگی\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "🕵️ خرابکاری":
-        await message.answer(
-            "🕵️ **سیستم خرابکاری**\n\n"
-            "🕵️ **نفوذی** - کاهش پدافند دشمن\n"
-            "💻 **الکترونیکی** - غیرفعال کردن سیستم\n"
-            "📡 **اطلاعاتی** - افزایش غارت\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
-    
-    elif text == "🎯 ترکیب‌ها":
-        await message.answer(
-            "🎯 **ترکیب‌های حمله**\n\n"
-            "🛠 **ترکیب ۱** - حمله سریع\n"
-            "🛠 **ترکیب ۲** - حمله سنگین\n"
-            "🛠 **ترکیب ۳** - حمله ویژه\n\n"
-            "🔜 به زودی فعال می‌شود",
-            reply_markup=main_menu()
-        )
+        logger.info(f"✅ پاسخ ارسال شد! Message ID: {response.message_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ خطا در ارسال پاسخ: {e}")
 
 @dp.message()
 async def all_messages(message: Message):
-    logger.info(f"📩 پیام: '{message.text}'")
-    await message.answer(
-        "🤖 لطفاً از منوی زیر انتخاب کنید:",
-        reply_markup=main_menu()
-    )
+    user = message.from_user
+    logger.info(f"📩 دریافت پیام: '{message.text}' از: {user.id}")
+    
+    try:
+        response = await message.answer(
+            f"🤖 بات جواب میده!\nپیام شما: {message.text}",
+            reply_markup=main_menu()
+        )
+        logger.info(f"✅ پاسخ ارسال شد: {response.message_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ خطا در ارسال پاسخ: {e}")
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot - Active! ⚔️")
 
 async def on_startup():
     try:
+        logger.info("🔗 تست اتصال به تلگرام...")
         bot_info = await bot.get_me()
-        logger.info(f"✅ بات: @{bot_info.username}")
+        logger.info(f"✅ بات: @{bot_info.username} (ID: {bot_info.id})")
         
         webhook_url = f"https://warzoneir-1.onrender.com/webhook"
+        logger.info(f"🔄 تنظیم وب‌هوک: {webhook_url}")
         await bot.set_webhook(webhook_url)
-        logger.info(f"✅ وب‌هوک تنظیم شد")
+        logger.info("✅ وب‌هوک تنظیم شد")
         
     except Exception as e:
-        logger.error(f"❌ خطا: {e}")
+        logger.error(f"❌ خطا در startup: {e}")
 
 async def create_app():
     await on_startup()
@@ -180,13 +95,24 @@ async def create_app():
     webhook_handler.register(app, path="/webhook")
     
     app.router.add_get('/', health_check)
-    logger.info("🚀 اپلیکیشن با منوی دکمه‌ای آماده")
+    logger.info("🚀 اپلیکیشن ساخته شد")
     return app
 
 def main():
-    logger.info("🎯 راه‌اندازی بات با منوی دکمه‌ای...")
-    app = asyncio.run(create_app())
-    web.run_app(app, host='0.0.0.0', port=8000)
+    logger.info("🎯 شروع راه‌اندازی...")
+    
+    # ایجاد event loop جدید
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        app = loop.run_until_complete(create_app())
+        logger.info("🌐 شروع سرور وب...")
+        web.run_app(app, host='0.0.0.0', port=8000)
+    except Exception as e:
+        logger.error(f"❌ خطا در main: {e}")
+    finally:
+        loop.close()
 
 if __name__ == '__main__':
     main()
