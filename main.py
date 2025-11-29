@@ -17,52 +17,55 @@ TOKEN = os.getenv("TOKEN")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# لاگ توکن برای دیباگ
-logger.info(f"🔑 توکن در سیستم: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
+logger.info(f"🔑 توکن: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
 
 if not TOKEN:
-    logger.error("❌ توکن پیدا نشد! لطفاً در رندر تنظیم کنید")
+    logger.error("❌ توکن پیدا نشد!")
     async def health_check(request):
-        return web.Response(text="❌ TOKEN not found in environment variables")
+        return web.Response(text="❌ TOKEN not found")
     
     app = web.Application()
     app.router.add_get('/', health_check)
     web.run_app(app, host='0.0.0.0', port=8000)
 
 else:
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    try:
+        bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+        logger.info("✅ Bot object created")
+    except Exception as e:
+        logger.error(f"❌ خطا در ساخت Bot: {e}")
+        # حالت fallback
+        async def health_check(request):
+            return web.Response(text=f"❌ Bot Error: {e}")
+        app = web.Application()
+        app.router.add_get('/', health_check)
+        web.run_app(app, host='0.0.0.0', port=8000)
+
     dp = Dispatcher()
 
     @dp.message(Command("start"))
     async def start_command(message: Message):
-        user = message.from_user
-        logger.info(f"🎯 دریافت /start از: {user.id}")
-        await message.answer(
-            "🎯 **به WarZone خوش آمدید!**\n\n"
-            f"🆔 شناسه شما: {user.id}\n"
-            "✅ بات آنلاین و فعال است!"
-        )
-
-    @dp.message()
-    async def all_messages(message: Message):
-        logger.info(f"📩 پیام: {message.text}")
-        await message.answer("🤖 بات فعال است! از /start استفاده کنید")
+        logger.info(f"🎯 START از: {message.from_user.id}")
+        await message.answer("✅ بات فعال است!")
 
     async def health_check(request):
-        return web.Response(text="✅ WarZone Bot - Active! ⚔️")
+        return web.Response(text="✅ WarZone Bot - Server OK")
 
     async def on_startup(app):
-        webhook_url = f"https://warzoneir-1.onrender.com/webhook"
+        logger.info("🔄 شروع تنظیم وب‌هوک...")
         try:
-            await bot.set_webhook(webhook_url)
-            logger.info(f"✅ وب‌هوک تنظیم شد")
-            
-            # تست اتصال بات
+            # تست اتصال به تلگرام
+            logger.info("🔗 تست اتصال به تلگرام...")
             bot_info = await bot.get_me()
-            logger.info(f"🤖 بات: @{bot_info.username}")
+            logger.info(f"✅ بات: @{bot_info.username} (ID: {bot_info.id})")
+            
+            # تنظیم وب‌هوک
+            webhook_url = f"https://warzoneir-1.onrender.com/webhook"
+            await bot.set_webhook(webhook_url)
+            logger.info(f"✅ وب‌هوک تنظیم شد: {webhook_url}")
             
         except Exception as e:
-            logger.error(f"❌ خطا در تنظیم بات: {e}")
+            logger.error(f"❌ خطا در اتصال به تلگرام: {e}")
 
     def main():
         dp.startup.register(on_startup)
@@ -70,7 +73,7 @@ else:
         SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path="/webhook")
         app.router.add_get('/', health_check)
         
-        logger.info("🚀 WarZone Bot راه‌اندازی شد...")
+        logger.info("🚀 سرور راه‌اندازی شد")
         web.run_app(app, host='0.0.0.0', port=8000)
 
     if __name__ == '__main__':
