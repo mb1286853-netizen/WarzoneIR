@@ -6,12 +6,11 @@ from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
 import sqlite3
-import random
 import os
 
 # تنظیمات
 TOKEN = os.getenv("TOKEN")
-WEBHOOK_URL = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}/webhook"
+PORT = int(os.getenv("PORT", 8000))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,35 +30,16 @@ class Database:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
-                username TEXT,
                 level INTEGER DEFAULT 1,
                 xp INTEGER DEFAULT 0,
                 zp INTEGER DEFAULT 1000,
-                gem INTEGER DEFAULT 0,
-                power INTEGER DEFAULT 100,
-                defense_level INTEGER DEFAULT 1,
-                cyber_level INTEGER DEFAULT 1,
-                miner_level INTEGER DEFAULT 1,
-                miner_balance INTEGER DEFAULT 0,
-                last_miner_claim INTEGER DEFAULT 0
+                gem INTEGER DEFAULT 0
             )
         ''')
         self.conn.commit()
 
 db = Database()
 
-# منوهای اصلی
-def main_menu():
-    keyboard = types.ReplyKeyboardMarkup(
-        keyboard=[
-            [types.KeyboardButton(text="👤 پروفایل"), types.KeyboardButton(text="⚔️ حمله")],
-            [types.KeyboardButton(text="🛒 فروشگاه"), types.KeyboardButton(text="⛏ ماینر")],
-        ],
-        resize_keyboard=True
-    )
-    return keyboard
-
-# سیستم کاربر
 def get_user(user_id):
     cursor = db.conn.cursor()
     cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
@@ -70,12 +50,17 @@ def get_user(user_id):
         return get_user(user_id)
     return user
 
-def update_user_zp(user_id, amount):
-    cursor = db.conn.cursor()
-    cursor.execute('UPDATE users SET zp = zp + ? WHERE user_id = ?', (amount, user_id))
-    db.conn.commit()
+# منوی اصلی
+def main_menu():
+    return types.ReplyKeyboardMarkup(
+        keyboard=[
+            [types.KeyboardButton(text="👤 پروفایل"), types.KeyboardButton(text="⚔️ حمله")],
+            [types.KeyboardButton(text="🛒 فروشگاه"), types.KeyboardButton(text="⛏ ماینر")],
+        ],
+        resize_keyboard=True
+    )
 
-# هندلرهای اصلی
+# هندلرها
 @dp.message(Command("start"))
 async def start_cmd(message: types.Message):
     user = get_user(message.from_user.id)
@@ -85,18 +70,15 @@ async def start_cmd(message: types.Message):
         "👇 از منوی زیر انتخاب کنید:",
         reply_markup=main_menu()
     )
-    logger.info(f"✅ کاربر {message.from_user.id} بات رو استارت کرد")
 
 @dp.message(lambda message: message.text == "👤 پروفایل")
 async def profile_handler(message: types.Message):
     user = get_user(message.from_user.id)
     await message.answer(
         f"👤 **پروفایل شما**\n\n"
-        f"⭐ سطح: {user[2]}\n"
-        f"💰 ZP: {user[4]:,}\n"
-        f"💎 جم: {user[5]}\n"
-        f"💪 قدرت: {user[6]}\n"
-        f"🛡️ پدافند: سطح {user[7]}",
+        f"⭐ سطح: {user[1]}\n"
+        f"💰 ZP: {user[3]:,}\n"
+        f"💎 جم: {user[4]}",
         reply_markup=main_menu()
     )
 
@@ -104,72 +86,52 @@ async def profile_handler(message: types.Message):
 async def attack_handler(message: types.Message):
     await message.answer(
         "⚔️ **سیستم حمله**\n\n"
-        "برای حمله به یک کاربر، روی پیامش ریپلای کنید و بنویسید:\n"
-        "<code>حمله سومار</code>\n\n"
-        "🎯 **موشک‌های موجود:**\n"
-        "• سومار (۱۰۰ دمیج)\n"
-        "• زلزله (۲۰۰ دمیج)\n"
-        "• آتشفشان (۵۰۰ دمیج)",
+        "برای حمله روی پیام کاربر ریپلای کن و بنویس:\n"
+        "<code>حمله</code>\n\n"
+        "🎯 جایزه: ۵۰ ZP",
         reply_markup=main_menu()
     )
 
 @dp.message(lambda message: message.text == "🛒 فروشگاه")
 async def shop_handler(message: types.Message):
-    await message.answer(
-        "🛒 **فروشگاه WarZone**\n\n"
-        "🚀 موشک‌ها\n"
-        "🛩 جنگنده‌ها\n"
-        "🛸 پهپادها\n"
-        "🔧 پدافند\n\n"
-        "🔜 به زودی فعال می‌شود",
-        reply_markup=main_menu()
-    )
+    await message.answer("🛒 **فروشگاه**\n\nبه زودی فعال می‌شود", reply_markup=main_menu())
 
 @dp.message(lambda message: message.text == "⛏ ماینر")
 async def miner_handler(message: types.Message):
-    user = get_user(message.from_user.id)
-    await message.answer(
-        f"⛏️ **سیستم ماینر**\n\n"
-        f"💰 تولید: ۱۰۰ ZP/ساعت\n"
-        f"📊 سطح: {user[9]}\n"
-        f"💎 موجودی: {user[10]} ZP\n"
-        f"🔼 هزینه ارتقا: ۵۰۰ ZP",
-        reply_markup=main_menu()
-    )
+    await message.answer("⛏ **ماینر**\n\nبه زودی فعال می‌شود", reply_markup=main_menu())
 
 @dp.message()
 async def all_messages(message: types.Message):
-    if message.text.startswith("حمله "):
-        missile_type = message.text.replace("حمله ", "").strip()
-        await message.answer(f"🚀 شلیک {missile_type}...\n✅ حمله موفق!")
-        update_user_zp(message.from_user.id, 50)
+    if "حمله" in message.text.lower():
+        await message.answer("🚀 حمله موفق!\n💰 +۵۰ ZP")
     else:
-        await message.answer("🎯 از منوی زیر انتخاب کنید:", reply_markup=main_menu())
+        await message.answer("🎯 از منو استفاده کن!", reply_markup=main_menu())
 
-# وب‌سرور برای رندر
+# وب‌سرور
 async def on_startup(app):
-    await bot.set_webhook(WEBHOOK_URL)
-    logger.info(f"✅ وب‌هوک تنظیم شد: {WEBHOOK_URL}")
+    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook"
+    await bot.set_webhook(webhook_url)
+    logger.info(f"✅ وب‌هوک تنظیم شد")
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot Active! ⚔️")
 
 def main():
-    # ساخت اپلیکیشن وب
     app = web.Application()
     
-    # ثبت وب‌هوک
+    # وب‌هوک
     webhook_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
     webhook_handler.register(app, path="/webhook")
     
-    # صفحه سلامت
+    # سلامت
     app.router.add_get("/", health_check)
+    app.router.add_get("/health", health_check)
     
-    # رویداد استارتاپ
+    # استارتاپ
     app.on_startup.append(on_startup)
     
-    logger.info("🚀 شروع وب‌سرور WarZone...")
-    web.run_app(app, host="0.0.0.0", port=8000)
+    logger.info(f"🚀 شروع سرور روی پورت {PORT}...")
+    web.run_app(app, host="0.0.0.0", port=PORT)
 
 if __name__ == '__main__':
     main()
