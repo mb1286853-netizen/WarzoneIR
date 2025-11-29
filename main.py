@@ -2,6 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
@@ -15,8 +16,8 @@ PORT = int(os.getenv("PORT", 8000))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ساخت بات
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+# ساخت بات با تنظیمات جدید
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 # دیتابیس ساده
@@ -50,6 +51,11 @@ def get_user(user_id):
         return get_user(user_id)
     return user
 
+def update_zp(user_id, amount):
+    cursor = db.conn.cursor()
+    cursor.execute('UPDATE users SET zp = zp + ? WHERE user_id = ?', (amount, user_id))
+    db.conn.commit()
+
 # منوی اصلی
 def main_menu():
     return types.ReplyKeyboardMarkup(
@@ -70,6 +76,7 @@ async def start_cmd(message: types.Message):
         "👇 از منوی زیر انتخاب کنید:",
         reply_markup=main_menu()
     )
+    logger.info(f"✅ کاربر {message.from_user.id} استارت زد")
 
 @dp.message(lambda message: message.text == "👤 پروفایل")
 async def profile_handler(message: types.Message):
@@ -84,34 +91,50 @@ async def profile_handler(message: types.Message):
 
 @dp.message(lambda message: message.text == "⚔️ حمله")
 async def attack_handler(message: types.Message):
+    update_zp(message.from_user.id, 50)
     await message.answer(
-        "⚔️ **سیستم حمله**\n\n"
-        "برای حمله روی پیام کاربر ریپلای کن و بنویس:\n"
-        "<code>حمله</code>\n\n"
-        "🎯 جایزه: ۵۰ ZP",
+        "⚔️ **حمله موفق!** 🎯\n\n"
+        "💰 +۵۰ ZP دریافت کردید!\n\n"
+        "برای حمله واقعی، روی پیام کاربر ریپلای کن و بنویس:\n"
+        "<code>حمله</code>",
         reply_markup=main_menu()
     )
 
 @dp.message(lambda message: message.text == "🛒 فروشگاه")
 async def shop_handler(message: types.Message):
-    await message.answer("🛒 **فروشگاه**\n\nبه زودی فعال می‌شود", reply_markup=main_menu())
+    await message.answer(
+        "🛒 **فروشگاه WarZone**\n\n"
+        "🚀 موشک‌ها\n"
+        "🛩 جنگنده‌ها\n"
+        "🛸 پهپادها\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
 
 @dp.message(lambda message: message.text == "⛏ ماینر")
 async def miner_handler(message: types.Message):
-    await message.answer("⛏ **ماینر**\n\nبه زودی فعال می‌شود", reply_markup=main_menu())
+    await message.answer(
+        "⛏ **سیستم ماینر**\n\n"
+        "💰 تولید خودکار ZP\n"
+        "📊 قابل ارتقا تا سطح ۱۵\n"
+        "⏰ برداشت هر ۳ ساعت\n\n"
+        "🔜 به زودی فعال می‌شود",
+        reply_markup=main_menu()
+    )
 
 @dp.message()
 async def all_messages(message: types.Message):
     if "حمله" in message.text.lower():
-        await message.answer("🚀 حمله موفق!\n💰 +۵۰ ZP")
+        update_zp(message.from_user.id, 30)
+        await message.answer("🚀 حمله انجام شد! 💰 +۳۰ ZP", reply_markup=main_menu())
     else:
-        await message.answer("🎯 از منو استفاده کن!", reply_markup=main_menu())
+        await message.answer("🎯 از منوی زیر انتخاب کنید:", reply_markup=main_menu())
 
 # وب‌سرور
 async def on_startup(app):
     webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook"
     await bot.set_webhook(webhook_url)
-    logger.info(f"✅ وب‌هوک تنظیم شد")
+    logger.info("✅ وب‌هوک تنظیم شد")
 
 async def health_check(request):
     return web.Response(text="✅ WarZone Bot Active! ⚔️")
