@@ -1,0 +1,35 @@
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+def defense_main_keyboard(current_level):
+    builder = InlineKeyboardBuilder()
+    
+    if current_level < 5:
+        builder.row(
+            InlineKeyboardButton(text="🔼 ارتقای پدافند", callback_data="upgrade_defense")
+        )
+    
+    builder.row(
+        InlineKeyboardButton(text="🔒 امنیت سایبری", callback_data="cyber_security"),
+        InlineKeyboardButton(text="📊 وضعیت دفاع", callback_data="defense_status")
+    )
+    builder.row(
+        InlineKeyboardButton(text="🔙 بازگشت", callback_data="main_menu")
+    )
+    
+    return builder.as_markup()
+
+def cyber_security_keyboard(current_level):
+    builder = InlineKeyboardBuilder()
+    
+    if current_level < 5:
+        builder.row(
+            InlineKeyboardButton(text="🔼 ارتقای امنیت", callback_data="upgrade_cyber")
+        )
+    
+    builder.row(
+        InlineKeyboardButton(text="📊 آمار امنیتی", callback_data="cyber_stats"),
+        InlineKeyboardButton(text="🔙 بازگشت", callback_data="defense_main")
+    )
+    
+    return builder.as_markup()
