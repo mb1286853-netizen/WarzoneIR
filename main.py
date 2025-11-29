@@ -1,23 +1,19 @@
-import os
-import logging
-from aiogram import Bot, Dispatcher
-from aiogram.types import Message
-from aiogram.filters import Command
+print("🚀 WarZone Bot Starting...")
 
-logging.basicConfig(level=logging.INFO)
-
-TOKEN = os.getenv("TOKEN")
-if not TOKEN:
-    logging.error("❌ Token not found!")
-    exit(1)
-
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
-
-@dp.message(Command("start"))
-async def start_cmd(message: Message):
-    await message.answer("🚀 WarZone Bot is working!")
-
-if __name__ == "__main__":
-    logging.info("✅ Bot starting...")
-    dp.run_polling(bot)
+try:
+    from aiohttp import web
+    print("✅ aiohttp imported successfully")
+    
+    async def health_check(request):
+        return web.Response(text="✅ WarZone Bot - Health Check OK")
+    
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    
+    print("✅ Web server configured")
+    web.run_app(app, host='0.0.0.0', port=8000)
+    
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+except Exception as e:
+    print(f"❌ Other error: {e}")
