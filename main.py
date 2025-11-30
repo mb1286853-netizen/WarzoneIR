@@ -4,19 +4,25 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from aiohttp import web
 import sqlite3
 import os
 
 # تنظیمات
 TOKEN = os.getenv("TOKEN")
-PORT = int(os.getenv("PORT", 8000))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ساخت بات با تنظیمات جدید
+print("=" * 50)
+print("🚀 شروع راه‌اندازی بات WarZone...")
+print(f"🔑 توکن: {'وجود دارد' if TOKEN else 'وجود ندارد'}")
+print("=" * 50)
+
+if not TOKEN:
+    print("❌ توکن پیدا نشد!")
+    exit()
+
+# ساخت بات
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
@@ -76,7 +82,7 @@ async def start_cmd(message: types.Message):
         "👇 از منوی زیر انتخاب کنید:",
         reply_markup=main_menu()
     )
-    logger.info(f"✅ کاربر {message.from_user.id} استارت زد")
+    print(f"✅ کاربر {message.from_user.id} استارت زد")
 
 @dp.message(lambda message: message.text == "👤 پروفایل")
 async def profile_handler(message: types.Message):
@@ -88,6 +94,7 @@ async def profile_handler(message: types.Message):
         f"💎 جم: {user[4]}",
         reply_markup=main_menu()
     )
+    print(f"📊 پروفایل کاربر {message.from_user.id}")
 
 @dp.message(lambda message: message.text == "⚔️ حمله")
 async def attack_handler(message: types.Message):
@@ -95,10 +102,11 @@ async def attack_handler(message: types.Message):
     await message.answer(
         "⚔️ **حمله موفق!** 🎯\n\n"
         "💰 +۵۰ ZP دریافت کردید!\n\n"
-        "برای حمله واقعی، روی پیام کاربر ریپلای کن و بنویس:\n"
+        "برای حمله به کاربران دیگر، روی پیامشون ریپلای کن و بنویس:\n"
         "<code>حمله</code>",
         reply_markup=main_menu()
     )
+    print(f"⚔️ حمله کاربر {message.from_user.id}")
 
 @dp.message(lambda message: message.text == "🛒 فروشگاه")
 async def shop_handler(message: types.Message):
@@ -127,34 +135,31 @@ async def all_messages(message: types.Message):
     if "حمله" in message.text.lower():
         update_zp(message.from_user.id, 30)
         await message.answer("🚀 حمله انجام شد! 💰 +۳۰ ZP", reply_markup=main_menu())
+        print(f"🎯 حمله کاربر {message.from_user.id}")
     else:
         await message.answer("🎯 از منوی زیر انتخاب کنید:", reply_markup=main_menu())
 
-# وب‌سرور
-async def on_startup(app):
-    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook"
-    await bot.set_webhook(webhook_url)
-    logger.info("✅ وب‌هوک تنظیم شد")
-
-async def health_check(request):
-    return web.Response(text="✅ WarZone Bot Active! ⚔️")
-
-def main():
-    app = web.Application()
+# شروع بات
+async def main():
+    print("🔄 اتصال به تلگرام...")
     
-    # وب‌هوک
-    webhook_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_handler.register(app, path="/webhook")
+    # حذف وب‌هوک قبلی
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        print("✅ وب‌هوک‌های قبلی حذف شد")
+    except:
+        print("⚠️ مشکل در حذف وب‌هوک")
     
-    # سلامت
-    app.router.add_get("/", health_check)
-    app.router.add_get("/health", health_check)
+    # اطلاعات بات
+    bot_info = await bot.get_me()
+    print(f"✅ بات: @{bot_info.username}")
+    print("🚀 بات فعال شد! منتظر پیام...")
     
-    # استارتاپ
-    app.on_startup.append(on_startup)
-    
-    logger.info(f"🚀 شروع سرور روی پورت {PORT}...")
-    web.run_app(app, host="0.0.0.0", port=PORT)
+    # شروع polling
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
-    main()
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"❌ خطا: {e}")
